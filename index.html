@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Malick Academy — Gestion Scolaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ===== RESET & VARIABLES ===== */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:       #09090f;
+  --surface:  #111118;
+  --card:     #16161f;
+  --border:   #23232f;
+  --text:     #e8e8f0;
+  --muted:    #6b6b80;
+  --accent:   #7c6af7;
+  --accent2:  #f7a26a;
+  --green:    #3ecf8e;
+  --red:      #f76a6a;
+  --yellow:   #f7d96a;
+  --radius:   14px;
+  --sidebar-w:260px;
+  --font-head:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+}
+body { font-family:var(--font-body); background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+/* ===== FORM ELEMENTS ===== */
+input, select, textarea {
+  font-family:var(--font-body);
+  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:.55rem .85rem;
+  border-radius:9px;
+  width:100%;
+  font-size:.9rem;
+  outline:none;
+  transition:border-color .2s;
+}
+input:focus, select:focus, textarea:focus { border-color:var(--accent); }
+select option { background:var(--surface); }
+textarea { resize:vertical; min-height:80px; }
+
+button {
+  font-family:var(--font-body);
+  cursor:pointer;
+  border:none;
+  border-radius:9px;
+  padding:.5rem 1.1rem;
+  font-size:.875rem;
+  font-weight:500;
+  transition:opacity .15s, transform .1s;
+}
+button:active { transform:scale(.97); }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { opacity:.85; }
+.btn-danger { background:var(--red); color:#fff; }
+.btn-danger:hover { opacity:.85; }
+.btn-success { background:var(--green); color:#000; }
+.btn-sm { padding:.3rem .7rem; font-size:.8rem; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ===== LOGIN ===== */
+#loginPage {
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, #1a1040 0%, var(--bg) 70%);
+  padding:1rem;
+}
+.login-wrap {
+  width:100%;
+  max-width:420px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:2.5rem 2rem;
+  animation: fadeUp .4s ease;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.login-logo {
+  font-family:var(--font-head);
+  font-size:1.7rem;
+  color:#fff;
+  text-align:center;
+  margin-bottom:.3rem;
+  letter-spacing:-.02em;
+}
+.login-logo span { color:var(--accent); }
+.login-sub { text-align:center; color:var(--muted); font-size:.85rem; margin-bottom:1.8rem; }
+.role-tabs { display:flex; gap:.5rem; background:var(--surface); padding:.3rem; border-radius:11px; margin-bottom:1.5rem; }
+.role-tab {
+  flex:1; text-align:center; padding:.45rem; border-radius:8px;
+  cursor:pointer; font-size:.85rem; color:var(--muted); font-weight:500;
+  transition:all .2s;
+}
+.role-tab.active { background:var(--accent); color:#fff; }
+.login-form { display:flex; flex-direction:column; gap:.7rem; }
+.login-btn { background:var(--accent); color:#fff; padding:.75rem; border-radius:11px; font-size:1rem; font-weight:700; width:100%; margin-top:.5rem; }
+.login-btn:hover { opacity:.88; }
+.login-hint { font-size:.75rem; color:var(--muted); text-align:center; margin-top:1rem; line-height:1.7; }
+.login-error { color:var(--red); font-size:.85rem; text-align:center; min-height:1.2em; }
+
+/* ===== APP LAYOUT ===== */
+#appContainer { display:none; }
+.layout { display:flex; min-height:100vh; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width:var(--sidebar-w);
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  top:0; left:0; bottom:0;
+  z-index:200;
+  transition:transform .3s;
+  overflow:hidden;
+}
+.sidebar-head {
+  padding:1.5rem 1.2rem 1rem;
+  border-bottom:1px solid var(--border);
+}
+.sidebar-logo {
+  font-family:var(--font-head);
+  font-size:1.25rem;
+  color:#fff;
+  letter-spacing:-.02em;
+}
+.sidebar-logo span { color:var(--accent); }
+.sidebar-role {
+  font-size:.75rem;
+  color:var(--muted);
+  margin-top:.2rem;
+}
+.sidebar-user {
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+  padding:1rem 1.2rem;
+  border-bottom:1px solid var(--border);
+}
+.avatar {
+  width:38px; height:38px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:.9rem; color:#fff;
+  flex-shrink:0;
+}
+.user-name { font-size:.875rem; font-weight:500; }
+.user-sub  { font-size:.75rem; color:var(--muted); }
+.sidebar-nav { flex:1; overflow-y:auto; padding:.75rem .6rem; }
+.nav-item {
+  display:flex; align-items:center; gap:.85rem;
+  padding:.65rem .9rem; margin:.15rem 0;
+  border-radius:10px; cursor:pointer;
+  color:var(--muted); font-size:.875rem; font-weight:500;
+  transition:all .18s;
+  position:relative;
+}
+.nav-item i { width:18px; text-align:center; font-size:.95rem; }
+.nav-item:hover { background:var(--card); color:var(--text); }
+.nav-item.active { background:rgba(124,106,247,.15); color:var(--accent); }
+.nav-item .badge-dot {
+  position:absolute; right:.9rem; top:50%; transform:translateY(-50%);
+  width:7px; height:7px; border-radius:50%; background:var(--red);
+}
+.sidebar-footer {
+  padding:.75rem .6rem;
+  border-top:1px solid var(--border);
+}
+.logout-item {
+  display:flex; align-items:center; gap:.85rem;
+  padding:.65rem .9rem; border-radius:10px;
+  cursor:pointer; color:var(--muted); font-size:.875rem;
+  transition:all .18s;
+}
+.logout-item:hover { background:rgba(247,106,106,.12); color:var(--red); }
+
+/* ===== MAIN ===== */
+.main {
+  margin-left:var(--sidebar-w);
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+.topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:1rem 1.75rem;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+  position:sticky; top:0; z-index:100;
+  gap:1rem;
+}
+.topbar-left h1 { font-family:var(--font-head); font-size:1.25rem; }
+.topbar-left p  { font-size:.8rem; color:var(--muted); margin-top:.1rem; }
+.topbar-right { display:flex; align-items:center; gap:.6rem; }
+.theme-btn {
+  background:var(--card); border:1px solid var(--border);
+  color:var(--text); width:36px; height:36px;
+  border-radius:8px; font-size:.85rem;
+  display:flex; align-items:center; justify-content:center;
+}
+.notif-btn {
+  background:var(--card); border:1px solid var(--border);
+  color:var(--text); width:36px; height:36px;
+  border-radius:8px; font-size:.85rem;
+  position:relative;
+  display:flex; align-items:center; justify-content:center;
+}
+.notif-badge {
+  position:absolute; top:4px; right:4px;
+  width:8px; height:8px; border-radius:50%;
+  background:var(--red); border:2px solid var(--surface);
+}
+.page-content { padding:1.75rem; flex:1; }
+
+/* ===== CARDS ===== */
+.card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:1.25rem;
+  margin-bottom:1.25rem;
+}
+.card-title {
+  font-family:var(--font-head);
+  font-size:1rem;
+  margin-bottom:1rem;
+  display:flex; align-items:center; gap:.6rem;
+}
+.card-title i { color:var(--accent); }
+.section-title {
+  font-family:var(--font-head);
+  font-size:1.5rem;
+  margin-bottom:1.25rem;
+}
+
+/* ===== STATS GRID ===== */
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+.stat-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.1rem 1.25rem;
+  position:relative; overflow:hidden;
+}
+.stat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+}
+.stat-card.purple::before { background:var(--accent); }
+.stat-card.orange::before { background:var(--accent2); }
+.stat-card.green::before  { background:var(--green); }
+.stat-card.red::before    { background:var(--red); }
+.stat-card.yellow::before { background:var(--yellow); }
+.stat-label { font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.4rem; }
+.stat-value { font-family:var(--font-head); font-size:2rem; line-height:1; }
+.stat-sub   { font-size:.75rem; color:var(--muted); margin-top:.3rem; }
+
+/* ===== TABLE ===== */
+.table-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--border); }
+table { width:100%; border-collapse:collapse; font-size:.875rem; }
+thead th {
+  background:var(--surface); color:var(--muted);
+  font-size:.75rem; text-transform:uppercase; letter-spacing:.06em;
+  padding:.75rem 1rem; text-align:left; font-weight:500;
+  border-bottom:1px solid var(--border);
+}
+tbody td { padding:.7rem 1rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:rgba(255,255,255,.025); }
+
+/* ===== BADGES ===== */
+.badge {
+  display:inline-flex; align-items:center; gap:.3rem;
+  padding:.2rem .6rem; border-radius:99px;
+  font-size:.75rem; font-weight:500;
+}
+.badge-purple { background:rgba(124,106,247,.18); color:var(--accent); }
+.badge-green  { background:rgba(62,207,142,.18);  color:var(--green);  }
+.badge-red    { background:rgba(247,106,106,.18);  color:var(--red);    }
+.badge-orange { background:rgba(247,162,106,.18);  color:var(--accent2);}
+.badge-yellow { background:rgba(247,217,106,.18);  color:var(--yellow); }
+
+/* ===== GRID FORM ===== */
+.form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.75rem; margin-bottom:.75rem; }
+.form-row   { display:flex; gap:.75rem; flex-wrap:wrap; align-items:flex-end; }
+label { font-size:.78rem; color:var(--muted); display:block; margin-bottom:.25rem; }
+
+/* ===== SEARCH BAR ===== */
+.search-row { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem; }
+.search-row input, .search-row select { max-width:250px; }
+
+/* ===== WEEK CALENDAR ===== */
+.week-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:.75rem; overflow-x:auto; }
+.day-col { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:.75rem; min-width:130px; }
+.day-col .day-head { font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:.6rem; font-weight:600; }
+.lesson-slot { background:rgba(124,106,247,.12); border-left:3px solid var(--accent); border-radius:6px; padding:.5rem .6rem; margin-bottom:.4rem; font-size:.78rem; line-height:1.4; }
+.lesson-slot.orange { background:rgba(247,162,106,.1); border-color:var(--accent2); }
+.lesson-slot.green  { background:rgba(62,207,142,.1);  border-color:var(--green); }
+.lesson-time { font-size:.7rem; color:var(--muted); }
+
+/* ===== MESSAGE BUBBLE ===== */
+.msg-bubble { padding:.75rem 1rem; border-radius:10px; margin-bottom:.5rem; font-size:.875rem; }
+.msg-bubble.sent     { background:rgba(124,106,247,.15); border-left:3px solid var(--accent); }
+.msg-bubble.received { background:var(--surface); border-left:3px solid var(--border); }
+.msg-meta { font-size:.72rem; color:var(--muted); margin-bottom:.2rem; }
+
+/* ===== TOAST ===== */
+.toast {
+  position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999;
+  background:var(--card); border:1px solid var(--green);
+  color:var(--text); padding:.75rem 1.25rem;
+  border-radius:12px; font-size:.875rem;
+  display:flex; align-items:center; gap:.6rem;
+  animation:toastAnim 3s ease forwards;
+  box-shadow:0 8px 30px rgba(0,0,0,.4);
+}
+.toast.err { border-color:var(--red); }
+@keyframes toastAnim {
+  0%   {opacity:0;transform:translateY(12px)}
+  12%  {opacity:1;transform:translateY(0)}
+  78%  {opacity:1}
+  100% {opacity:0;transform:translateY(-8px)}
+}
+.toast i { color:var(--green); }
+.toast.err i { color:var(--red); }
+
+/* ===== NOTE PILL ===== */
+.note-pill {
+  display:inline-block; padding:.15rem .6rem;
+  border-radius:99px; font-weight:700; font-size:.9rem;
+}
+.note-high { background:rgba(62,207,142,.2);  color:var(--green);  }
+.note-mid  { background:rgba(247,217,106,.2); color:var(--yellow); }
+.note-low  { background:rgba(247,106,106,.2); color:var(--red);    }
+
+/* ===== PROGRESS BAR ===== */
+.prog-bar { background:var(--border); border-radius:99px; height:6px; overflow:hidden; }
+.prog-fill { height:100%; border-radius:99px; transition:width .4s; }
+
+/* ===== LIGHT THEME ===== */
+body.light {
+  --bg:#f4f4f8; --surface:#ffffff; --card:#f9f9fc;
+  --border:#e0e0ea; --text:#141420; --muted:#888899;
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .sidebar { transform:translateX(-100%); }
+  .sidebar.open { transform:translateX(0); }
+  .main { margin-left:0; }
+  .hamburger { display:flex !important; }
+}
+.hamburger {
+  display:none; flex-direction:column; gap:4px;
+  background:none; border:none; cursor:pointer; padding:.4rem;
+}
+.hamburger span { display:block; width:22px; height:2px; background:var(--text); border-radius:2px; transition:.2s; }
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:150; }
+.overlay.show { display:block; }
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="loginPage">
+  <div class="login-wrap">
+    <div class="login-logo">Malick <span>Academy</span></div>
+    <p class="login-sub">Portail de gestion scolaire</p>
+
+    <div class="role-tabs" id="roleTabs">
+      <div class="role-tab" data-role="admin"><i class="fas fa-shield-halved"></i> ADMIN</div>
+      <div class="role-tab active" data-role="prof"><i class="fas fa-chalkboard-user"></i> PROFESSEURS</div>
+      <div class="role-tab" data-role="eleve"><i class="fas fa-user-graduate"></i> ÉLEVES</div>
+    </div>
+
+    <div class="login-form">
+      <div>
+        <label>Identifiant</label>
+        <input type="text" id="loginUser" placeholder="Votre login" value="dupont">
+      </div>
+      <div>
+        <label>Mot de passe</label>
+        <input type="password" id="loginPwd" placeholder="••••••••" value="prof123">
+      </div>
+      <div class="login-error" id="loginErr"></div>
+      <button class="login-btn" onclick="attemptLogin()">Se connecter →</button>
+    </div>
+
+    <p class="login-hint">
+      Admin: admin / admin123<br>
+      Prof: dupont / prof123 &nbsp;|&nbsp; sophie / prof123<br>
+      Élève: alice / alice123 &nbsp;|&nbsp; thomas / thomas123
+    </p>
+  </div>
+</div>
+
+<!-- ========== APP ========== -->
+<div id="appContainer">
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-logo">Malick <span>Academy</span></div>
+        <div class="sidebar-role" id="sidebarRole">—</div>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar" id="sidebarAvatar">?</div>
+        <div>
+          <div class="user-name" id="sidebarName">—</div>
+          <div class="user-sub"  id="sidebarSub">—</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebarNav"></nav>
+      <div class="sidebar-footer">
+        <div class="logout-item" onclick="logout()">
+          <i class="fas fa-arrow-right-from-bracket"></i> Déconnexion
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main" id="mainArea">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:.8rem">
+          <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+            <span></span><span></span><span></span>
+          </button>
+          <div class="topbar-left">
+            <h1 id="pageTitle">Tableau de bord</h1>
+            <p id="pageSub">Vue d'ensemble</p>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="notif-btn" title="Notifications" id="notifBtn">
+            <i class="fas fa-bell"></i>
+            <span class="notif-badge" id="notifBadge" style="display:none"></span>
+          </button>
+          <button class="theme-btn" onclick="toggleTheme()" title="Thème">
+            <i class="fas fa-circle-half-stroke"></i>
+          </button>
+        </div>
+      </div>
+      <div class="page-content" id="pageContent"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ========== SCRIPT ========== -->
+<script>
+// ============================
+// INIT DATA
+// ============================
+function initData() {
+  if (!ls('professeurs')) ls('professeurs', [
+    { id:1, nom:'Dupont',  prenom:'Jean',    matiere:'Mathématiques', email:'jean.dupont@ecole.sn',  login:'dupont', password:'prof123' },
+    { id:2, nom:'Martin',  prenom:'Sophie',  matiere:'Français',      email:'sophie.martin@ecole.sn',login:'martin', password:'prof123' },
+    { id:3, nom:'Bernard', prenom:'Pierre',  matiere:'Histoire',      email:'pierre.b@ecole.sn',     login:'bernard',password:'prof123' },
+    { id:4, nom:'Diallo',  prenom:'Aminata', matiere:'Sciences',      email:'a.diallo@ecole.sn',     login:'diallo', password:'prof123' }
+  ]);
+  if (!ls('eleves')) ls('eleves', [
+    { id:1, nom:'Alice Lemoine', classe:'3ème A', login:'alice',  password:'alice123'  },
+    { id:2, nom:'Thomas Roux',   classe:'3ème A', login:'thomas', password:'thomas123' },
+    { id:3, nom:'Emma Legrand',  classe:'3ème B', login:'emma',   password:'emma123'   },
+    { id:4, nom:'Ibou Sow',      classe:'3ème B', login:'ibou',   password:'ibou123'   }
+  ]);
+  if (!ls('classes'))  ls('classes', ['3ème A','3ème B','4ème A','4ème B']);
+  if (!ls('matieres')) ls('matieres', ['Maths','Français','Histoire','Sciences','Anglais']);
+  if (!ls('emploi'))   ls('emploi', [
+    { id:1,  jour:'Lundi',    heure:'08:00-10:00', classe:'3ème A', matiere:'Maths',    professeur:'Dupont'  },
+    { id:2,  jour:'Lundi',    heure:'10:00-12:00', classe:'3ème A', matiere:'Français', professeur:'Martin'  },
+    { id:3,  jour:'Mardi',    heure:'08:00-10:00', classe:'3ème A', matiere:'Histoire', professeur:'Bernard' },
+    { id:4,  jour:'Mercredi', heure:'09:00-11:00', classe:'3ème B', matiere:'Maths',    professeur:'Dupont'  },
+    { id:5,  jour:'Jeudi',    heure:'08:00-10:00', classe:'3ème B', matiere:'Sciences', professeur:'Diallo'  },
+    { id:6,  jour:'Vendredi', heure:'10:00-12:00', classe:'3ème A', matiere:'Sciences', professeur:'Diallo'  }
+  ]);
+  if (!ls('notes')) ls('notes', [
+    { id:1, eleveId:1, eleve:'Alice Lemoine', matiere:'Maths',    note:15, coef:2, professeur:'Dupont',  valide:true,  commentaire:'Très bien' },
+    { id:2, eleveId:2, eleve:'Thomas Roux',   matiere:'Maths',    note:12, coef:2, professeur:'Dupont',  valide:true,  commentaire:'Assez bien' },
+    { id:3, eleveId:1, eleve:'Alice Lemoine', matiere:'Français', note:16, coef:2, professeur:'Martin',  valide:true,  commentaire:'Excellent' },
+    { id:4, eleveId:2, eleve:'Thomas Roux',   matiere:'Français', note:11, coef:2, professeur:'Martin',  valide:true,  commentaire:'Passable' },
+    { id:5, eleveId:3, eleve:'Emma Legrand',  matiere:'Maths',    note:14, coef:2, professeur:'Dupont',  valide:true,  commentaire:'Bien' },
+    { id:6, eleveId:4, eleve:'Ibou Sow',      matiere:'Sciences', note:17, coef:1, professeur:'Diallo',  valide:true,  commentaire:'Excellent' },
+    { id:7, eleveId:1, eleve:'Alice Lemoine', matiere:'Sciences', note:13, coef:1, professeur:'Diallo',  valide:false, commentaire:'' }
+  ]);
+  if (!ls('absences')) ls('absences', [
+    { id:1, eleve:'Thomas Roux',  date:'2025-01-10', cours:'Maths',    justifie:false },
+    { id:2, eleve:'Emma Legrand', date:'2025-01-12', cours:'Français', justifie:true  }
+  ]);
+  if (!ls('messages')) ls('messages', [
+    { id:1, from:'admin', to:'dupont', message:'Bienvenue sur la plateforme !', date:'2025-01-05 09:00', lu:true },
+    { id:2, from:'alice', to:'dupont', message:'Bonjour, j\'ai une question sur le devoir.', date:'2025-01-08 10:30', lu:false }
+  ]);
+  if (!ls('devoirs')) ls('devoirs', [
+    { id:1, matiere:'Maths',    classe:'3ème A', titre:'Évaluation algèbre', date:'2025-02-10', professeur:'Dupont' },
+    { id:2, matiere:'Français', classe:'3ème A', titre:'Rédaction dirigée', date:'2025-02-12', professeur:'Martin' }
+  ]);
+  if (!ls('periodes')) ls('periodes', ['Trimestre 1','Trimestre 2','Trimestre 3']);
+}
+
+// ============================
+// LOCALSTORAGE HELPERS
+// ============================
+function ls(key, val) {
+  if (val === undefined) {
+    try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; }
+  }
+  localStorage.setItem(key, JSON.stringify(val));
+}
+
+// ============================
+// GLOBAL STATE
+// ============================
+let currentUser = null;
+let chartInstances = {};
+let pendingNotes = 0;
+
+initData();
+
+// ============================
+// TOAST
+// ============================
+function toast(msg, err=false) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (err ? ' err':'');
+  el.innerHTML = `<i class="fas fa-${err?'xmark':'check'}"></i> ${msg}`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3100);
+}
+
+// ============================
+// THEME
+// ============================
+function toggleTheme() { document.body.classList.toggle('light'); }
+
+// ============================
+// SIDEBAR RESPONSIVE
+// ============================
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ============================
+// LOGIN
+// ============================
+document.querySelectorAll('.role-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('loginErr').textContent = '';
+    const role = btn.dataset.role;
+    document.getElementById('loginUser').value = role==='admin'?'admin':role==='prof'?'dupont':'alice';
+    document.getElementById('loginPwd').value  = role==='admin'?'admin123':role==='prof'?'prof123':'alice123';
+  });
+});
+
+document.getElementById('loginPwd').addEventListener('keydown', e => { if(e.key==='Enter') attemptLogin(); });
+
+function attemptLogin() {
+  const role = document.querySelector('.role-tab.active').dataset.role;
+  const user = document.getElementById('loginUser').value.trim();
+  const pwd  = document.getElementById('loginPwd').value.trim();
+  document.getElementById('loginErr').textContent = '';
+
+  if (role === 'admin') {
+    if (user==='admin' && pwd==='admin123') {
+      currentUser = { role:'admin', nom:'Administrateur', login:'admin' };
+      startApp();
+    } else { document.getElementById('loginErr').textContent = 'Identifiants incorrects'; }
+  }
+  else if (role === 'prof') {
+    const prof = ls('professeurs').find(p => p.login===user && p.password===pwd);
+    if (prof) {
+      currentUser = { role:'prof', id:prof.id, nom:prof.nom+' '+prof.prenom, matiere:prof.matiere, login:prof.login };
+      startApp();
+    } else { document.getElementById('loginErr').textContent = 'Identifiants incorrects'; }
+  }
+  else {
+    const eleve = ls('eleves').find(e => e.login===user && e.password===pwd);
+    if (eleve) {
+      currentUser = { role:'eleve', id:eleve.id, nom:eleve.nom, classe:eleve.classe, login:eleve.login };
+      startApp();
+    } else { document.getElementById('loginErr').textContent = 'Identifiants incorrects'; }
+  }
+}
+
+function startApp() {
+  document.getElementById('loginPage').style.display  = 'none';
+  document.getElementById('appContainer').style.display = 'block';
+
+  // Header info
+  const initials = currentUser.nom.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('sidebarAvatar').textContent = initials;
+  document.getElementById('sidebarName').textContent  = currentUser.nom;
+  document.getElementById('sidebarRole').textContent  = currentUser.role.charAt(0).toUpperCase()+currentUser.role.slice(1);
+  document.getElementById('sidebarSub').textContent   = currentUser.role==='prof' ? currentUser.matiere : currentUser.role==='eleve' ? currentUser.classe : 'Espace Admin';
+
+  buildSidebar();
+  checkNotifications();
+}
+
+function logout() {
+  currentUser = null;
+  Object.values(chartInstances).forEach(c => { try{c.destroy()}catch(e){} });
+  chartInstances = {};
+  document.getElementById('loginPage').style.display  = 'flex';
+  document.getElementById('appContainer').style.display = 'none';
+  document.getElementById('loginErr').textContent = '';
+}
+
+// ============================
+// NOTIFICATIONS
+// ============================
+function checkNotifications() {
+  const notes = ls('notes');
+  pendingNotes = notes.filter(n => !n.valide).length;
+  const msgs   = ls('messages').filter(m => m.to===currentUser.login && !m.lu).length;
+  const total  = currentUser.role==='admin' ? pendingNotes + msgs : msgs;
+  const badge  = document.getElementById('notifBadge');
+  badge.style.display = total > 0 ? 'block' : 'none';
+}
+
+// ============================
+// BUILD SIDEBAR
+// ============================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  let items = [];
+
+  if (currentUser.role === 'admin') {
+    items = [
+      { icon:'chart-line',       label:'Dashboard',         page:'dashboard'   },
+      { icon:'building-columns', label:'Classes & Matières', page:'classes'     },
+      { icon:'chalkboard-user',  label:'Professeurs',        page:'professeurs' },
+      { icon:'users',            label:'Élèves',             page:'eleves'      },
+      { icon:'calendar-week',    label:'Emploi du temps',    page:'emploi'      },
+      { icon:'star-half-stroke', label:'Notes (validation)', page:'notes', dot: pendingNotes>0 },
+      { icon:'user-clock',       label:'Absences',           page:'absences'    },
+      { icon:'envelope',         label:'Messagerie',         page:'messages'    },
+      { icon:'chart-simple',     label:'Statistiques',       page:'stats'       },
+      { icon:'calendar-check',   label:'Devoirs',            page:'devoirs'     },
+      { icon:'gear',             label:'Paramètres',         page:'parametres'  },
+      { icon:'database',         label:'Sauvegarde',         page:'sauvegarde'  }
+    ];
+  } else if (currentUser.role === 'prof') {
+    items = [
+      { icon:'calendar-alt',   label:'Mon Emploi du temps', page:'edt'        },
+      { icon:'pen-to-square',  label:'Saisir notes',        page:'saisienotes'},
+      { icon:'user-check',     label:'Appel / Présences',   page:'appel'      },
+      { icon:'clipboard-list', label:'Devoirs',             page:'devoirs'    },
+      { icon:'envelope',       label:'Messages',            page:'messages'   },
+      { icon:'gear',           label:'Paramètres',          page:'parametres' }
+    ];
+  } else {
+    items = [
+      { icon:'star',           label:'Mes notes',           page:'mesnotes'    },
+      { icon:'chart-bar',      label:'Mon bulletin',        page:'bulletin'    },
+      { icon:'calendar',       label:'Mon EDT',             page:'monedt'      },
+      { icon:'user-clock',     label:'Mes absences',        page:'mesabsences' },
+      { icon:'clipboard-list', label:'Devoirs à venir',     page:'devoirs'     },
+      { icon:'envelope',       label:'Messages',            page:'messages'    },
+      { icon:'gear',           label:'Paramètres',          page:'parametres'  }
+    ];
+  }
+
+  nav.innerHTML = items.map(it => `
+    <div class="nav-item" data-page="${it.page}">
+      <i class="fas fa-${it.icon}"></i>
+      <span>${it.label}</span>
+      ${it.dot ? '<span class="badge-dot"></span>' : ''}
+    </div>`).join('');
+
+  nav.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => {
+      nav.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      closeSidebar();
+      routePage(el.dataset.page);
+    });
+  });
+
+  // Activate first
+  nav.querySelector('.nav-item')?.classList.add('active');
+  routePage(items[0].page);
+}
+
+// ============================
+// ROUTER
+// ============================
+function routePage(page) {
+  Object.values(chartInstances).forEach(c => { try{c.destroy()}catch(e){} });
+  chartInstances = {};
+
+  const titles = {
+    dashboard:'Dashboard', classes:'Classes & Matières', professeurs:'Professeurs',
+    eleves:'Élèves', emploi:'Emploi du temps', notes:'Validation des notes',
+    absences:'Absences', messages:'Messagerie', stats:'Statistiques',
+    devoirs:'Devoirs', parametres:'Paramètres', sauvegarde:'Sauvegarde',
+    edt:'Mon Emploi du temps', saisienotes:'Saisie des notes', appel:'Appel',
+    mesnotes:'Mes notes', bulletin:'Mon bulletin', monedt:'Mon EDT',
+    mesabsences:'Mes absences'
+  };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+
+  if (currentUser.role==='admin') {
+    if(page==='dashboard')   adminDashboard();
+    else if(page==='classes')     adminClasses();
+    else if(page==='professeurs') adminProfesseurs();
+    else if(page==='eleves')      adminEleves();
+    else if(page==='emploi')      adminEmploi();
+    else if(page==='notes')       adminNotes();
+    else if(page==='absences')    adminAbsences();
+    else if(page==='messages')    pageMessages();
+    else if(page==='stats')       adminStats();
+    else if(page==='devoirs')     adminDevoirs();
+    else if(page==='parametres')  pageParametres();
+    else if(page==='sauvegarde')  adminSauvegarde();
+  } else if (currentUser.role==='prof') {
+    if(page==='edt')         profEdt();
+    else if(page==='saisienotes') profNotes();
+    else if(page==='appel')       profAppel();
+    else if(page==='devoirs')     profDevoirs();
+    else if(page==='messages')    pageMessages();
+    else if(page==='parametres')  pageParametres();
+  } else {
+    if(page==='mesnotes')    eleveMesNotes();
+    else if(page==='bulletin')    eleveBulletin();
+    else if(page==='monedt')      eleveEdt();
+    else if(page==='mesabsences') eleveMesAbsences();
+    else if(page==='devoirs')     eleveDevoirs();
+    else if(page==='messages')    pageMessages();
+    else if(page==='parametres')  pageParametres();
+  }
+}
+
+function setContent(html) { document.getElementById('pageContent').innerHTML = html; }
+
+// ============================
+// NOTE COLORING
+// ============================
+function noteClass(n) { return n>=14 ? 'note-high' : n>=10 ? 'note-mid' : 'note-low'; }
+function notePill(n)  { return `<span class="note-pill ${noteClass(n)}">${n}/20</span>`; }
+
+// ============================
+// ====== ADMIN PAGES =========
+// ============================
+
+// --- DASHBOARD ---
+function adminDashboard() {
+  const profs   = ls('professeurs').length;
+  const eleves  = ls('eleves').length;
+  const noteArr = ls('notes');
+  const validées= noteArr.filter(n=>n.valide).length;
+  const pending = noteArr.filter(n=>!n.valide).length;
+  const absences= ls('absences').length;
+
+  setContent(`
+    <div class="stats-grid">
+      <div class="stat-card purple"><div class="stat-label">Professeurs</div><div class="stat-value">${profs}</div><div class="stat-sub">actifs</div></div>
+      <div class="stat-card orange"><div class="stat-label">Élèves</div><div class="stat-value">${eleves}</div><div class="stat-sub">inscrits</div></div>
+      <div class="stat-card green"><div class="stat-label">Notes publiées</div><div class="stat-value">${validées}</div><div class="stat-sub">validées</div></div>
+      <div class="stat-card yellow"><div class="stat-label">En attente</div><div class="stat-value">${pending}</div><div class="stat-sub">à valider</div></div>
+      <div class="stat-card red"><div class="stat-label">Absences</div><div class="stat-value">${absences}</div><div class="stat-sub">enregistrées</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;flex-wrap:wrap">
+      <div class="card"><div class="card-title"><i class="fas fa-chart-bar"></i> Effectifs</div><canvas id="chartEffectifs" height="200"></canvas></div>
+      <div class="card"><div class="card-title"><i class="fas fa-chart-pie"></i> Notes par statut</div><canvas id="chartNotes" height="200"></canvas></div>
+    </div>
+    <div class="card" style="margin-top:1.25rem">
+      <div class="card-title"><i class="fas fa-clock"></i> Dernières notes en attente</div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Élève</th><th>Matière</th><th>Note</th><th>Prof</th><th>Action</th></tr></thead>
+        <tbody>${noteArr.filter(n=>!n.valide).slice(0,5).map(n=>`
+          <tr><td>${n.eleve}</td><td>${n.matiere}</td><td>${notePill(n.note)}</td><td>${n.professeur}</td>
+          <td><button class="btn-primary btn-sm" onclick="validerNoteId(${n.id})">Valider</button></td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center">Aucune note en attente</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>
+  `);
+
+  chartInstances.eff = new Chart(document.getElementById('chartEffectifs'), {
+    type:'bar',
+    data:{ labels:['Professeurs','Élèves','Notes validées','Absences'], datasets:[{ label:'Effectifs', data:[profs,eleves,validées,absences], backgroundColor:['#7c6af7','#f7a26a','#3ecf8e','#f76a6a'], borderRadius:6 }] },
+    options:{ plugins:{legend:{display:false}}, scales:{y:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#6b6b80'}}, x:{grid:{display:false},ticks:{color:'#6b6b80'}}} }
+  });
+  chartInstances.nt = new Chart(document.getElementById('chartNotes'), {
+    type:'doughnut',
+    data:{ labels:['Validées','En attente'], datasets:[{ data:[validées,pending], backgroundColor:['#3ecf8e','#f7d96a'], borderWidth:0 }] },
+    options:{ plugins:{legend:{labels:{color:'#e8e8f0'}}} }
+  });
+}
+
+window.validerNoteId = function(id) {
+  const notes = ls('notes'); const n = notes.find(x=>x.id===id);
+  if(n){ n.valide=true; ls('notes',notes); toast('Note validée !'); adminDashboard(); }
+};
+
+// --- CLASSES & MATIÈRES ---
+function adminClasses() {
+  const classes  = ls('classes');
+  const matieres = ls('matieres');
+  const periodes = ls('periodes');
+  setContent(`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+      <div class="card">
+        <div class="card-title"><i class="fas fa-building-columns"></i> Classes</div>
+        <div class="form-row" style="margin-bottom:.75rem">
+          <input type="text" id="newClasse" placeholder="Ex: 5ème A">
+          <button class="btn-primary" onclick="addClasse()"><i class="fas fa-plus"></i> Ajouter</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Classe</th><th>Action</th></tr></thead><tbody>
+          ${classes.map(c=>`<tr><td>${c}</td><td><button class="btn-danger btn-sm" onclick="delClasse('${c}')"><i class="fas fa-trash"></i></button></td></tr>`).join('')}
+        </tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-book"></i> Matières</div>
+        <div class="form-row" style="margin-bottom:.75rem">
+          <input type="text" id="newMatiere" placeholder="Ex: Physique">
+          <button class="btn-primary" onclick="addMatiere()"><i class="fas fa-plus"></i> Ajouter</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Matière</th><th>Action</th></tr></thead><tbody>
+          ${matieres.map(m=>`<tr><td>${m}</td><td><button class="btn-danger btn-sm" onclick="delMatiere('${m}')"><i class="fas fa-trash"></i></button></td></tr>`).join('')}
+        </tbody></table></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-layer-group"></i> Périodes (trimestres)</div>
+      <div class="form-row" style="margin-bottom:.75rem">
+        <input type="text" id="newPeriode" placeholder="Ex: Semestre 1">
+        <button class="btn-primary" onclick="addPeriode()"><i class="fas fa-plus"></i> Ajouter</button>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        ${periodes.map(p=>`<span class="badge badge-purple">${p} <span onclick="delPeriode('${p}')" style="cursor:pointer;margin-left:.4rem;opacity:.7">&times;</span></span>`).join('')}
+      </div>
+    </div>
+  `);
+}
+window.addClasse   = ()=>{ const v=document.getElementById('newClasse').value.trim();  if(!v)return; const a=ls('classes');  a.push(v); ls('classes',a);  adminClasses(); toast('Classe ajoutée'); };
+window.delClasse   = c=>{ ls('classes',  ls('classes').filter(x=>x!==c));  adminClasses(); };
+window.addMatiere  = ()=>{ const v=document.getElementById('newMatiere').value.trim(); if(!v)return; const a=ls('matieres');a.push(v); ls('matieres',a); adminClasses(); toast('Matière ajoutée'); };
+window.delMatiere  = m=>{ ls('matieres', ls('matieres').filter(x=>x!==m)); adminClasses(); };
+window.addPeriode  = ()=>{ const v=document.getElementById('newPeriode').value.trim(); if(!v)return; const a=ls('periodes');a.push(v); ls('periodes',a); adminClasses(); toast('Période ajoutée'); };
+window.delPeriode  = p=>{ ls('periodes', ls('periodes').filter(x=>x!==p)); adminClasses(); };
+
+// --- PROFESSEURS ---
+function adminProfesseurs() {
+  const profs = ls('professeurs');
+  const mats  = ls('matieres');
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-user-plus"></i> Ajouter / Modifier</div>
+      <input type="hidden" id="profId">
+      <div class="form-grid">
+        <div><label>Nom</label><input id="pNom" placeholder="Nom"></div>
+        <div><label>Prénom</label><input id="pPrenom" placeholder="Prénom"></div>
+        <div><label>Matière</label><select id="pMat">${mats.map(m=>`<option>${m}</option>`).join('')}</select></div>
+        <div><label>Email</label><input id="pEmail" placeholder="email@ecole.sn"></div>
+        <div><label>Login</label><input id="pLogin" placeholder="login"></div>
+        <div><label>Mot de passe</label><input id="pPwd" type="password" placeholder="••••••"></div>
+      </div>
+      <div class="form-row">
+        <button class="btn-primary" onclick="saveProf()"><i class="fas fa-save"></i> Enregistrer</button>
+        <button class="btn-outline" onclick="adminProfesseurs()">Annuler</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-list"></i> Liste des professeurs (${profs.length})</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nom</th><th>Matière</th><th>Email</th><th>Login</th><th>Actions</th></tr></thead>
+        <tbody>${profs.map(p=>`
+          <tr>
+            <td>${p.nom} ${p.prenom}</td>
+            <td><span class="badge badge-purple">${p.matiere}</span></td>
+            <td>${p.email||'—'}</td>
+            <td><code style="background:var(--surface);padding:.1rem .4rem;border-radius:4px;font-size:.8rem">${p.login}</code></td>
+            <td style="display:flex;gap:.4rem">
+              <button class="btn-outline btn-sm" onclick="editProf(${p.id})"><i class="fas fa-pen"></i></button>
+              <button class="btn-danger btn-sm"  onclick="delProf(${p.id})"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  `);
+}
+window.saveProf = function(){
+  const id=document.getElementById('profId').value;
+  const nom=document.getElementById('pNom').value.trim(),prenom=document.getElementById('pPrenom').value.trim(),
+        mat=document.getElementById('pMat').value,email=document.getElementById('pEmail').value.trim(),
+        login=document.getElementById('pLogin').value.trim(),pwd=document.getElementById('pPwd').value.trim();
+  if(!nom||!login||!pwd){ toast('Champs requis',true); return; }
+  let profs=ls('professeurs');
+  if(id){ const p=profs.find(x=>x.id==id); if(p){Object.assign(p,{nom,prenom,matiere:mat,email,login,password:pwd});} }
+  else { profs.push({id:Date.now(),nom,prenom,matiere:mat,email,login,password:pwd}); }
+  ls('professeurs',profs); adminProfesseurs(); toast(id?'Prof modifié':'Prof ajouté');
+};
+window.editProf = function(id){ const p=ls('professeurs').find(x=>x.id===id); if(!p)return;
+  document.getElementById('profId').value=p.id;
+  document.getElementById('pNom').value=p.nom; document.getElementById('pPrenom').value=p.prenom;
+  document.getElementById('pMat').value=p.matiere; document.getElementById('pEmail').value=p.email||'';
+  document.getElementById('pLogin').value=p.login; document.getElementById('pPwd').value=p.password;
+  document.getElementById('pNom').focus();
+};
+window.delProf = function(id){ if(!confirm('Supprimer ce professeur ?'))return; ls('professeurs',ls('professeurs').filter(p=>p.id!==id)); adminProfesseurs(); toast('Supprimé'); };
+
+// --- ÉLÈVES ---
+function adminEleves() {
+  const eleves  = ls('eleves');
+  const classes = ls('classes');
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-user-plus"></i> Ajouter / Modifier</div>
+      <input type="hidden" id="eleveId">
+      <div class="form-grid">
+        <div><label>Nom complet</label><input id="eNom" placeholder="Prénom Nom"></div>
+        <div><label>Classe</label><select id="eClasse">${classes.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Login</label><input id="eLogin" placeholder="login"></div>
+        <div><label>Mot de passe</label><input id="ePwd" type="password" placeholder="••••••"></div>
+      </div>
+      <div class="form-row">
+        <button class="btn-primary" onclick="saveEleve()"><i class="fas fa-save"></i> Enregistrer</button>
+        <button class="btn-outline" onclick="adminEleves()">Annuler</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-users"></i> Liste des élèves (${eleves.length})</div>
+      <div class="search-row">
+        <input placeholder="Rechercher..." id="eleveSearch" oninput="filterEleves(this.value)">
+        <select id="eleveClassFilter" onchange="filterEleves(document.getElementById('eleveSearch').value)">
+          <option value="">Toutes classes</option>
+          ${classes.map(c=>`<option>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="table-wrap" id="elevesTable"><table>
+        <thead><tr><th>Nom</th><th>Classe</th><th>Login</th><th>Moy.</th><th>Actions</th></tr></thead>
+        <tbody id="elevesTbody">${buildEleveRows(eleves)}</tbody>
+      </table></div>
+    </div>
+  `);
+}
+function buildEleveRows(eleves) {
+  const notes = ls('notes').filter(n=>n.valide);
+  return eleves.map(e=>{
+    const myNotes = notes.filter(n=>n.eleveId===e.id);
+    const avg = myNotes.length ? (myNotes.reduce((a,b)=>a+b.note,0)/myNotes.length).toFixed(1) : '—';
+    return `<tr>
+      <td>${e.nom}</td>
+      <td><span class="badge badge-orange">${e.classe}</span></td>
+      <td><code style="background:var(--surface);padding:.1rem .4rem;border-radius:4px;font-size:.8rem">${e.login}</code></td>
+      <td>${avg!=='—'?notePill(parseFloat(avg)):avg}</td>
+      <td style="display:flex;gap:.4rem">
+        <button class="btn-outline btn-sm" onclick="editEleve(${e.id})"><i class="fas fa-pen"></i></button>
+        <button class="btn-danger btn-sm"  onclick="delEleve(${e.id})"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+window.filterEleves = function(search){
+  const classe = document.getElementById('eleveClassFilter').value;
+  let eleves = ls('eleves').filter(e=>{
+    const matchS = e.nom.toLowerCase().includes(search.toLowerCase());
+    const matchC = !classe || e.classe===classe;
+    return matchS && matchC;
+  });
+  document.getElementById('elevesTbody').innerHTML = buildEleveRows(eleves);
+};
+window.saveEleve = function(){
+  const id=document.getElementById('eleveId').value;
+  const nom=document.getElementById('eNom').value.trim(),classe=document.getElementById('eClasse').value,
+        login=document.getElementById('eLogin').value.trim(),pwd=document.getElementById('ePwd').value.trim();
+  if(!nom||!login||!pwd){ toast('Champs requis',true); return; }
+  let eleves=ls('eleves');
+  if(id){ const e=eleves.find(x=>x.id==id); if(e)Object.assign(e,{nom,classe,login,password:pwd}); }
+  else { eleves.push({id:Date.now(),nom,classe,login,password:pwd}); }
+  ls('eleves',eleves); adminEleves(); toast(id?'Élève modifié':'Élève ajouté');
+};
+window.editEleve = function(id){ const e=ls('eleves').find(x=>x.id===id); if(!e)return;
+  document.getElementById('eleveId').value=e.id;
+  document.getElementById('eNom').value=e.nom; document.getElementById('eClasse').value=e.classe;
+  document.getElementById('eLogin').value=e.login; document.getElementById('ePwd').value=e.password;
+};
+window.delEleve = function(id){ if(!confirm('Supprimer ?'))return; ls('eleves',ls('eleves').filter(e=>e.id!==id)); adminEleves(); toast('Supprimé'); };
+
+// --- EMPLOI DU TEMPS ---
+function adminEmploi() {
+  const emploi  = ls('emploi');
+  const classes = ls('classes');
+  const mats    = ls('matieres');
+  const profs   = ls('professeurs');
+  const jours   = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-plus-circle"></i> Ajouter un cours</div>
+      <div class="form-grid">
+        <div><label>Jour</label><select id="cJour">${jours.map(j=>`<option>${j}</option>`).join('')}</select></div>
+        <div><label>Horaire</label><input id="cHeure" placeholder="08:00-10:00"></div>
+        <div><label>Classe</label><select id="cClasse">${classes.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Matière</label><select id="cMat">${mats.map(m=>`<option>${m}</option>`).join('')}</select></div>
+        <div><label>Professeur</label><select id="cProf">${profs.map(p=>`<option>${p.nom}</option>`).join('')}</select></div>
+      </div>
+      <button class="btn-primary" onclick="addCours()"><i class="fas fa-plus"></i> Ajouter</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-calendar-week"></i> Visualisation par classe</div>
+      <div class="search-row">
+        <select id="filterClasseEmploi" onchange="renderWeekView(this.value)">
+          ${classes.map(c=>`<option>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div id="weekViewContainer"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-list"></i> Tous les cours</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Jour</th><th>Horaire</th><th>Classe</th><th>Matière</th><th>Prof</th><th>Action</th></tr></thead>
+        <tbody>${emploi.map(c=>`<tr><td>${c.jour}</td><td>${c.heure}</td><td>${c.classe}</td><td>${c.matiere}</td><td>${c.professeur}</td>
+          <td><button class="btn-danger btn-sm" onclick="delEmploi(${c.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  `);
+  renderWeekView(classes[0]);
+}
+function renderWeekView(classe) {
+  const emploi = ls('emploi').filter(c=>c.classe===classe);
+  const jours  = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+  const colors = ['','orange','green','','orange'];
+  document.getElementById('weekViewContainer').innerHTML = `
+    <div class="week-grid">${jours.map((j,i)=>`
+      <div class="day-col">
+        <div class="day-head">${j}</div>
+        ${emploi.filter(c=>c.jour===j).map(c=>`
+          <div class="lesson-slot ${colors[i]||''}">
+            <div>${c.matiere}</div>
+            <div style="font-weight:600">${c.professeur}</div>
+            <div class="lesson-time">${c.heure}</div>
+          </div>`).join('') || '<div style="color:var(--muted);font-size:.78rem">—</div>'}
+      </div>`).join('')}
+    </div>`;
+}
+window.addCours = function(){
+  const c={id:Date.now(),jour:document.getElementById('cJour').value,heure:document.getElementById('cHeure').value,
+    classe:document.getElementById('cClasse').value,matiere:document.getElementById('cMat').value,
+    professeur:document.getElementById('cProf').value};
+  if(!c.heure){ toast('Saisir un horaire',true); return; }
+  const e=ls('emploi'); e.push(c); ls('emploi',e); adminEmploi(); toast('Cours ajouté');
+};
+window.delEmploi = function(id){ ls('emploi',ls('emploi').filter(c=>c.id!==id)); adminEmploi(); };
+
+// --- NOTES VALIDATION ---
+function adminNotes() {
+  const notes   = ls('notes');
+  const pending = notes.filter(n=>!n.valide);
+  const valid   = notes.filter(n=>n.valide);
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-clock"></i> Notes en attente (${pending.length})</div>
+      ${pending.length===0 ? '<p style="color:var(--muted)">Aucune note en attente</p>' : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Élève</th><th>Matière</th><th>Note</th><th>Prof</th><th>Commentaire</th><th>Actions</th></tr></thead>
+        <tbody>${pending.map(n=>`<tr>
+          <td>${n.eleve}</td><td>${n.matiere}</td><td>${notePill(n.note)}</td><td>${n.professeur}</td>
+          <td style="color:var(--muted);font-size:.82rem">${n.commentaire||'—'}</td>
+          <td style="display:flex;gap:.4rem">
+            <button class="btn-success btn-sm" onclick="valNote(${n.id},true)"><i class="fas fa-check"></i> Valider</button>
+            <button class="btn-danger btn-sm"  onclick="valNote(${n.id},false)"><i class="fas fa-trash"></i></button>
+          </td></tr>`).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-check-circle"></i> Notes publiées (${valid.length})</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Élève</th><th>Matière</th><th>Note</th><th>Prof</th><th>Action</th></tr></thead>
+        <tbody>${valid.map(n=>`<tr>
+          <td>${n.eleve}</td><td>${n.matiere}</td><td>${notePill(n.note)}</td><td>${n.professeur}</td>
+          <td><button class="btn-danger btn-sm" onclick="delNoteAdmin(${n.id})"><i class="fas fa-trash"></i></button></td>
+        </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  `);
+}
+window.valNote = function(id,accept){
+  const notes=ls('notes');
+  if(accept){ const n=notes.find(x=>x.id===id); if(n)n.valide=true; ls('notes',notes); toast('Note validée !'); }
+  else { ls('notes',notes.filter(x=>x.id!==id)); toast('Note supprimée'); }
+  adminNotes(); checkNotifications();
+};
+window.delNoteAdmin = function(id){ if(!confirm('Supprimer ?'))return; ls('notes',ls('notes').filter(n=>n.id!==id)); adminNotes(); toast('Supprimée'); };
+
+// --- ABSENCES ---
+function adminAbsences() {
+  const absences = ls('absences');
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-user-clock"></i> Gestion des absences (${absences.length})</div>
+      ${absences.length===0 ? '<p style="color:var(--muted)">Aucune absence enregistrée</p>' : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Élève</th><th>Date</th><th>Cours</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody>${absences.map(a=>`<tr>
+          <td>${a.eleve}</td><td>${a.date}</td><td>${a.cours}</td>
+          <td>${a.justifie ? '<span class="badge badge-green">Justifiée</span>' : '<span class="badge badge-red">Non justifiée</span>'}</td>
+          <td style="display:flex;gap:.4rem">
+            ${!a.justifie ? `<button class="btn-success btn-sm" onclick="justifierAbs(${a.id})"><i class="fas fa-check"></i> Justifier</button>` : ''}
+            <button class="btn-danger btn-sm" onclick="delAbs(${a.id})"><i class="fas fa-trash"></i></button>
+          </td></tr>`).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+  `);
+}
+window.justifierAbs = function(id){ const abs=ls('absences'); const a=abs.find(x=>x.id===id); if(a)a.justifie=true; ls('absences',abs); adminAbsences(); toast('Absence justifiée'); };
+window.delAbs = function(id){ ls('absences',ls('absences').filter(a=>a.id!==id)); adminAbsences(); };
+
+// --- STATS ---
+function adminStats() {
+  const notes   = ls('notes').filter(n=>n.valide);
+  const mats    = ls('matieres');
+  const classes = ls('classes');
+  const eleves  = ls('eleves');
+
+  const moyMat  = mats.map(m=>{ const arr=notes.filter(n=>n.matiere===m); return arr.length?(arr.reduce((a,b)=>a+b.note,0)/arr.length).toFixed(1):0; });
+  const moyClass= classes.map(cl=>{ const ids=eleves.filter(e=>e.classe===cl).map(e=>e.id); const arr=notes.filter(n=>ids.includes(n.eleveId)); return arr.length?(arr.reduce((a,b)=>a+b.note,0)/arr.length).toFixed(1):0; });
+
+  // Classement
+  const classement = eleves.map(e=>{
+    const myN = notes.filter(n=>n.eleveId===e.id);
+    const avg  = myN.length?(myN.reduce((a,b)=>a+b.note,0)/myN.length):0;
+    return {...e, avg};
+  }).sort((a,b)=>b.avg-a.avg);
+
+  setContent(`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+      <div class="card"><div class="card-title"><i class="fas fa-chart-bar"></i> Moyennes par matière</div><canvas id="chartMat" height="220"></canvas></div>
+      <div class="card"><div class="card-title"><i class="fas fa-school"></i> Moyennes par classe</div><canvas id="chartClass" height="220"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-trophy"></i> Classement général</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Élève</th><th>Classe</th><th>Moyenne</th><th>Progression</th></tr></thead>
+        <tbody>${classement.map((e,i)=>`<tr>
+          <td><span class="badge ${i===0?'badge-yellow':i===1?'badge-orange':i===2?'badge-purple':'badge-purple'}">${i+1}</span></td>
+          <td>${e.nom}</td><td>${e.classe}</td><td>${e.avg?notePill(parseFloat(e.avg.toFixed(1))):'—'}</td>
+          <td><div class="prog-bar" style="width:120px"><div class="prog-fill" style="width:${(e.avg/20)*100}%;background:${e.avg>=14?'var(--green)':e.avg>=10?'var(--yellow)':'var(--red)'}"></div></div></td>
+        </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  `);
+  chartInstances.m = new Chart(document.getElementById('chartMat'), { type:'bar', data:{ labels:mats, datasets:[{label:'Moyenne',data:moyMat,backgroundColor:'#7c6af7',borderRadius:6}] }, options:{plugins:{legend:{display:false}},scales:{y:{max:20,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#6b6b80'}},x:{grid:{display:false},ticks:{color:'#6b6b80'}}}} });
+  chartInstances.c = new Chart(document.getElementById('chartClass'), { type:'bar', data:{ labels:classes, datasets:[{label:'Moyenne/classe',data:moyClass,backgroundColor:'#f7a26a',borderRadius:6}] }, options:{plugins:{legend:{display:false}},scales:{y:{max:20,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#6b6b80'}},x:{grid:{display:false},ticks:{color:'#6b6b80'}}}} });
+}
+
+// --- DEVOIRS ADMIN ---
+function adminDevoirs() {
+  const devoirs = ls('devoirs');
+  const classes = ls('classes');
+  const mats    = ls('matieres');
+  const profs   = ls('professeurs');
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-plus-circle"></i> Créer un devoir</div>
+      <div class="form-grid">
+        <div><label>Titre</label><input id="dTitre" placeholder="Ex: Contrôle de maths"></div>
+        <div><label>Matière</label><select id="dMat">${mats.map(m=>`<option>${m}</option>`).join('')}</select></div>
+        <div><label>Classe</label><select id="dClasse">${classes.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Date</label><input id="dDate" type="date"></div>
+        <div><label>Professeur</label><select id="dProf">${profs.map(p=>`<option>${p.nom}</option>`).join('')}</select></div>
+      </div>
+      <button class="btn-primary" onclick="addDevoir()"><i class="fas fa-plus"></i> Créer</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-calendar-check"></i> Devoirs planifiés (${devoirs.length})</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Titre</th><th>Matière</th><th>Classe</th><th>Date</th><th>Prof</th><th>Action</th></tr></thead>
+        <tbody>${devoirs.map(d=>`<tr><td>${d.titre}</td><td>${d.matiere}</td><td>${d.classe}</td><td>${d.date}</td><td>${d.professeur}</td>
+          <td><button class="btn-danger btn-sm" onclick="delDevoir(${d.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  `);
+}
+window.addDevoir = function(){ const d={id:Date.now(),titre:document.getElementById('dTitre').value,matiere:document.getElementById('dMat').value,classe:document.getElementById('dClasse').value,date:document.getElementById('dDate').value,professeur:document.getElementById('dProf').value}; if(!d.titre||!d.date){toast('Saisir titre et date',true);return;} const arr=ls('devoirs'); arr.push(d); ls('devoirs',arr); adminDevoirs(); toast('Devoir créé'); };
+window.delDevoir = function(id){ ls('devoirs',ls('devoirs').filter(d=>d.id!==id)); adminDevoirs(); };
+
+// --- SAUVEGARDE ---
+function adminSauvegarde() {
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-database"></i> Export / Import des données</div>
+      <p style="color:var(--muted);font-size:.875rem;margin-bottom:1rem">Exportez toutes les données de l'application en JSON pour les sauvegarder, ou importez un fichier précédemment exporté.</p>
+      <div class="form-row">
+        <button class="btn-primary" onclick="exportJSON()"><i class="fas fa-download"></i> Exporter JSON</button>
+        <button class="btn-outline" onclick="window.print()"><i class="fas fa-print"></i> Imprimer</button>
+      </div>
+      <hr style="border-color:var(--border);margin:1rem 0">
+      <div><label>Importer un fichier JSON</label><input type="file" id="importFile" accept=".json" style="margin-top:.5rem"></div>
+      <button class="btn-success" style="margin-top:.5rem" onclick="importJSON()"><i class="fas fa-upload"></i> Importer</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-info-circle"></i> Statistiques du stockage</div>
+      ${['professeurs','eleves','notes','absences','messages','devoirs','emploi'].map(k=>{
+        const arr=ls(k)||[]; return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--border)"><span>${k}</span><span class="badge badge-purple">${arr.length} entrées</span></div>`;
+      }).join('')}
+    </div>
+  `);
+}
+window.exportJSON = function(){
+  const data={};
+  ['professeurs','eleves','classes','matieres','emploi','notes','messages','absences','devoirs','periodes'].forEach(k=>{ data[k]=ls(k); });
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`malick_academy_backup_${Date.now()}.json`; a.click();
+  toast('Export effectué');
+};
+window.importJSON = function(){
+  const file=document.getElementById('importFile').files[0]; if(!file)return;
+  const r=new FileReader(); r.onload=e=>{ const data=JSON.parse(e.target.result); for(const k in data)ls(k,data[k]); toast('Données importées'); setTimeout(()=>location.reload(),1200); }; r.readAsText(file);
+};
+
+// ============================
+// ====== PROFESSEUR PAGES ====
+// ============================
+
+function profEdt() {
+  const profNom = currentUser.nom.split(' ')[0];
+  const emploi  = ls('emploi').filter(c=>c.professeur===profNom);
+  const jours   = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-calendar-alt"></i> Mon emploi du temps — ${currentUser.matiere}</div>
+      <div class="week-grid">${jours.map(j=>`
+        <div class="day-col">
+          <div class="day-head">${j}</div>
+          ${emploi.filter(c=>c.jour===j).map(c=>`
+            <div class="lesson-slot">
+              <div style="font-weight:600">${c.classe}</div>
+              <div>${c.matiere}</div>
+              <div class="lesson-time">${c.heure}</div>
+            </div>`).join('') || '<div style="color:var(--muted);font-size:.78rem">Libre</div>'}
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-list"></i> Récapitulatif (${emploi.length} cours/semaine)</div>
+      ${emploi.length ? `<div class="table-wrap"><table><thead><tr><th>Jour</th><th>Horaire</th><th>Classe</th><th>Matière</th></tr></thead><tbody>
+        ${emploi.map(c=>`<tr><td>${c.jour}</td><td>${c.heure}</td><td>${c.classe}</td><td>${c.matiere}</td></tr>`).join('')}
+      </tbody></table></div>` : `<p style="color:var(--muted)">Aucun cours planifié</p>`}
+    </div>
+  `);
+}
+
+function profNotes() {
+  const eleves  = ls('eleves');
+  const notes   = ls('notes');
+  const matiere = currentUser.matiere;
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-pen-to-square"></i> Saisie des notes — ${matiere}</div>
+      <p style="color:var(--muted);font-size:.82rem;margin-bottom:1rem">Les notes soumises seront en attente de validation par l'administrateur avant publication.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Élève</th><th>Classe</th><th>Note actuelle</th><th>Nouvelle note /20</th><th>Commentaire</th><th>Action</th></tr></thead>
+        <tbody>${eleves.map(e=>{
+          const ex = notes.find(n=>n.eleveId===e.id && n.matiere===matiere);
+          return `<tr>
+            <td>${e.nom}</td><td>${e.classe}</td>
+            <td>${ex ? notePill(ex.note) : '<span style="color:var(--muted)">—</span>'}</td>
+            <td><input type="number" min="0" max="20" step="0.5" id="noteVal-${e.id}" value="${ex?ex.note:''}" style="width:80px"></td>
+            <td><input type="text" id="noteCom-${e.id}" value="${ex?ex.commentaire||'':''}" placeholder="Appréciation" style="width:160px"></td>
+            <td><button class="btn-primary btn-sm" onclick="submitNote(${e.id},'${e.nom}')">Soumettre</button></td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  `);
+}
+window.submitNote = function(eleveId, eleveNom){
+  const note = parseFloat(document.getElementById(`noteVal-${eleveId}`).value);
+  const com  = document.getElementById(`noteCom-${eleveId}`).value;
+  if(isNaN(note)||note<0||note>20){ toast('Note invalide (0-20)',true); return; }
+  let notes = ls('notes');
+  const ex  = notes.find(n=>n.eleveId===eleveId && n.matiere===currentUser.matiere);
+  if(ex){ ex.note=note; ex.commentaire=com; ex.valide=false; }
+  else { notes.push({id:Date.now(),eleveId,eleve:eleveNom,matiere:currentUser.matiere,note,coef:2,professeur:currentUser.nom.split(' ')[0],valide:false,commentaire:com}); }
+  ls('notes',notes); toast('Note soumise (en attente)'); profNotes();
+};
+
+function profAppel() {
+  const classes = ls('classes');
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-user-check"></i> Faire l'appel</div>
+      <div class="form-row" style="margin-bottom:1rem">
+        <div style="flex:1"><label>Classe</label><select id="appelClasse">${classes.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Date</label><input type="date" id="appelDate" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div><label>&nbsp;</label><button class="btn-primary" onclick="chargerAppel()">Charger</button></div>
+      </div>
+      <div id="appelList"></div>
+    </div>
+  `);
+}
+window.chargerAppel = function(){
+  const classe = document.getElementById('appelClasse').value;
+  const date   = document.getElementById('appelDate').value;
+  const eleves = ls('eleves').filter(e=>e.classe===classe);
+  const absences=ls('absences');
+  document.getElementById('appelList').innerHTML = `
+    <div class="table-wrap"><table>
+      <thead><tr><th>Élève</th><th>Présent</th><th>Absent</th></tr></thead>
+      <tbody>${eleves.map(e=>{
+        const absent = absences.some(a=>a.eleve===e.nom && a.date===date);
+        return `<tr><td>${e.nom}</td>
+          <td><input type="radio" name="pres-${e.id}" value="present" ${!absent?'checked':''}> Présent</td>
+          <td><input type="radio" name="pres-${e.id}" value="absent" ${absent?'checked':''}> Absent</td></tr>`;
+      }).join('')}
+      </tbody>
+    </table></div>
+    <button class="btn-primary" style="margin-top:.75rem" onclick="saveAppel('${classe}','${date}')"><i class="fas fa-save"></i> Enregistrer l'appel</button>`;
+};
+window.saveAppel = function(classe,date){
+  const eleves  = ls('eleves').filter(e=>e.classe===classe);
+  let absences  = ls('absences');
+  eleves.forEach(e=>{
+    const radio = document.querySelector(`input[name="pres-${e.id}"]:checked`);
+    const absent = radio?.value==='absent';
+    const idx    = absences.findIndex(a=>a.eleve===e.nom && a.date===date);
+    if(absent && idx===-1) absences.push({id:Date.now(),eleve:e.nom,date,cours:currentUser.matiere,justifie:false});
+    else if(!absent && idx!==-1) absences.splice(idx,1);
+  });
+  ls('absences',absences); toast('Appel enregistré');
+};
+
+function profDevoirs() {
+  const devoirs = ls('devoirs').filter(d=>d.professeur===currentUser.nom.split(' ')[0]);
+  const classes = ls('classes');
+  const mats    = ls('matieres');
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-plus-circle"></i> Créer un devoir</div>
+      <div class="form-grid">
+        <div><label>Titre</label><input id="dTitre" placeholder="Ex: Contrôle algèbre"></div>
+        <div><label>Classe</label><select id="dClasse">${classes.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Date</label><input type="date" id="dDate"></div>
+      </div>
+      <button class="btn-primary" onclick="addDevoirProf()"><i class="fas fa-plus"></i> Créer</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-calendar-check"></i> Mes devoirs planifiés</div>
+      ${devoirs.length===0 ? '<p style="color:var(--muted)">Aucun devoir planifié</p>' : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Titre</th><th>Classe</th><th>Date</th><th>Action</th></tr></thead>
+        <tbody>${devoirs.map(d=>`<tr><td>${d.titre}</td><td>${d.classe}</td><td>${d.date}</td>
+          <td><button class="btn-danger btn-sm" onclick="delDevoir(${d.id})"><i class="fas fa-trash"></i></button></td></tr>`).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+  `);
+}
+window.addDevoirProf = function(){
+  const d={id:Date.now(),titre:document.getElementById('dTitre').value,matiere:currentUser.matiere,classe:document.getElementById('dClasse').value,date:document.getElementById('dDate').value,professeur:currentUser.nom.split(' ')[0]};
+  if(!d.titre||!d.date){toast('Titre et date requis',true);return;}
+  const arr=ls('devoirs'); arr.push(d); ls('devoirs',arr); profDevoirs(); toast('Devoir créé');
+};
+
+// ============================
+// ====== ÉLÈVE PAGES =========
+// ============================
+
+function eleveMesNotes() {
+  const notes = ls('notes').filter(n=>n.eleveId===currentUser.id && n.valide);
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-star"></i> Mes notes officielles</div>
+      ${notes.length===0 ? '<p style="color:var(--muted)">Aucune note publiée pour l\'instant</p>' : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Matière</th><th>Note</th><th>Coef.</th><th>Professeur</th><th>Appréciation</th></tr></thead>
+        <tbody>${notes.map(n=>`<tr>
+          <td>${n.matiere}</td><td>${notePill(n.note)}</td>
+          <td>${n.coef||1}</td><td>${n.professeur}</td>
+          <td style="color:var(--muted);font-style:italic;font-size:.85rem">${n.commentaire||'—'}</td>
+        </tr>`).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+  `);
+}
+
+function eleveBulletin() {
+  const notes   = ls('notes').filter(n=>n.eleveId===currentUser.id && n.valide);
+  const mats    = [...new Set(notes.map(n=>n.matiere))];
+  const total   = notes.reduce((a,b)=>a+(b.note*(b.coef||1)),0);
+  const totalCoef = notes.reduce((a,b)=>a+(b.coef||1),0);
+  const moyenne = totalCoef ? (total/totalCoef).toFixed(2) : '—';
+
+  setContent(`
+    <div class="card" style="border:2px solid var(--accent)">
+      <div style="text-align:center;margin-bottom:1.5rem">
+        <div style="font-family:var(--font-head);font-size:1.3rem">Malick Academy</div>
+        <div style="color:var(--muted);font-size:.85rem">Bulletin scolaire</div>
+        <div style="margin-top:.5rem"><span class="badge badge-orange">${currentUser.classe}</span></div>
+        <div style="font-size:1.1rem;margin-top:.5rem;font-weight:600">${currentUser.nom}</div>
+      </div>
+
+      <div class="table-wrap"><table>
+        <thead><tr><th>Matière</th><th>Note</th><th>Coef.</th><th>Note pondérée</th><th>Appréciation</th></tr></thead>
+        <tbody>
+          ${notes.map(n=>`<tr>
+            <td>${n.matiere}</td><td>${notePill(n.note)}</td>
+            <td>${n.coef||1}</td><td>${(n.note*(n.coef||1)).toFixed(1)}</td>
+            <td style="font-size:.82rem;color:var(--muted)">${n.commentaire||'—'}</td>
+          </tr>`).join('')}
+          <tr style="background:rgba(124,106,247,.08);font-weight:700">
+            <td colspan="3">Moyenne Générale</td>
+            <td colspan="2">${moyenne!=='—'?notePill(parseFloat(moyenne)):moyenne}</td>
+          </tr>
+        </tbody>
+      </table></div>
+
+      ${notes.length > 0 ? `
+      <div class="card" style="margin-top:1rem">
+        <div class="card-title"><i class="fas fa-chart-bar"></i> Visualisation</div>
+        <canvas id="bulletinChart" height="120"></canvas>
+      </div>` : ''}
+    </div>
+  `);
+
+  if(notes.length > 0) {
+    chartInstances.b = new Chart(document.getElementById('bulletinChart'),{
+      type:'bar',
+      data:{ labels:mats, datasets:[{label:'Note',data:mats.map(m=>notes.find(n=>n.matiere===m)?.note||0),backgroundColor:'#7c6af7',borderRadius:6},{label:'Moyenne (10)',data:mats.map(()=>10),type:'line',borderColor:'#f76a6a',borderDash:[4,4],pointRadius:0,fill:false}] },
+      options:{plugins:{legend:{labels:{color:'#e8e8f0'}}},scales:{y:{max:20,min:0,grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#6b6b80'}},x:{grid:{display:false},ticks:{color:'#6b6b80'}}}}
+    });
+  }
+}
+
+function eleveEdt() {
+  const emploi = ls('emploi').filter(c=>c.classe===currentUser.classe);
+  const jours  = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-calendar"></i> Mon emploi du temps — ${currentUser.classe}</div>
+      <div class="week-grid">${jours.map((j,i)=>{
+        const colors=['','orange','green','','orange'];
+        return `<div class="day-col">
+          <div class="day-head">${j}</div>
+          ${emploi.filter(c=>c.jour===j).map(c=>`
+            <div class="lesson-slot ${colors[i]||''}">
+              <div style="font-weight:600">${c.matiere}</div>
+              <div style="color:var(--muted);font-size:.75rem">M. ${c.professeur}</div>
+              <div class="lesson-time">${c.heure}</div>
+            </div>`).join('') || '<div style="color:var(--muted);font-size:.78rem">—</div>'}
+        </div>`;
+      }).join('')}</div>
+    </div>
+  `);
+}
+
+function eleveMesAbsences() {
+  const absences = ls('absences').filter(a=>a.eleve===currentUser.nom);
+  const just = absences.filter(a=>a.justifie).length;
+  setContent(`
+    <div class="stats-grid">
+      <div class="stat-card red"><div class="stat-label">Total absences</div><div class="stat-value">${absences.length}</div></div>
+      <div class="stat-card green"><div class="stat-label">Justifiées</div><div class="stat-value">${just}</div></div>
+      <div class="stat-card yellow"><div class="stat-label">Non justifiées</div><div class="stat-value">${absences.length-just}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-user-clock"></i> Historique</div>
+      ${absences.length===0 ? '<p style="color:var(--muted)">Aucune absence enregistrée</p>' : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Cours</th><th>Statut</th></tr></thead>
+        <tbody>${absences.map(a=>`<tr>
+          <td>${a.date}</td><td>${a.cours}</td>
+          <td>${a.justifie ? '<span class="badge badge-green">Justifiée</span>' : '<span class="badge badge-red">Non justifiée</span>'}</td>
+        </tr>`).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+  `);
+}
+
+function eleveDevoirs() {
+  const devoirs = ls('devoirs').filter(d=>d.classe===currentUser.classe).sort((a,b)=>a.date.localeCompare(b.date));
+  setContent(`
+    <div class="card">
+      <div class="card-title"><i class="fas fa-clipboard-list"></i> Devoirs à venir — ${currentUser.classe}</div>
+      ${devoirs.length===0 ? '<p style="color:var(--muted)">Aucun devoir planifié</p>' : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Titre</th><th>Matière</th><th>Date</th><th>Professeur</th></tr></thead>
+        <tbody>${devoirs.map(d=>`<tr>
+          <td>${d.titre}</td>
+          <td><span class="badge badge-purple">${d.matiere}</span></td>
+          <td>${d.date}</td><td>${d.professeur}</td>
+        </tr>`).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+  `);
+}
+
+// ============================
+// ====== SHARED PAGES ========
+// ============================
+
+// --- MESSAGERIE ---
+function pageMessages() {
+  const msgs = ls('messages');
+  const myMsgs = msgs.filter(m=>m.to===currentUser.login || m.from===currentUser.login);
+
+  // Mark as read
+  let updated = false;
+  msgs.forEach(m=>{ if(m.to===currentUser.login && !m.lu){ m.lu=true; updated=true; } });
+  if(updated){ ls('messages',msgs); checkNotifications(); }
+
+  const contacts = currentUser.role==='admin'
+    ? 'admin, dupont, martin, bernard, diallo, alice, thomas, emma, ibou'
+    : currentUser.role==='prof'
+    ? 'admin, alice, thomas, emma, ibou'
+    : 'admin, dupont, martin, bernard, diallo';
+
+  setContent(`
+    <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:1.25rem;height:calc(100vh - 180px)">
+      <div class="card" style="overflow-y:auto">
+        <div class="card-title"><i class="fas fa-inbox"></i> Conversations</div>
+        ${myMsgs.length===0 ? '<p style="color:var(--muted)">Aucun message</p>' :
+          myMsgs.slice().reverse().map(m=>`
+            <div class="msg-bubble ${m.from===currentUser.login?'sent':'received'}">
+              <div class="msg-meta"><strong>${m.from}</strong> → ${m.to} · ${m.date}</div>
+              ${m.message}
+            </div>`).join('')}
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;gap:.75rem">
+        <div class="card-title"><i class="fas fa-pen"></i> Nouveau message</div>
+        <div>
+          <label>Destinataire (login)</label>
+          <input id="msgTo" placeholder="Ex: admin, alice, dupont...">
+          <small style="color:var(--muted)">Contacts: ${contacts}</small>
+        </div>
+        <div style="flex:1">
+          <label>Message</label>
+          <textarea id="msgBody" placeholder="Votre message..." style="height:120px"></textarea>
+        </div>
+        <button class="btn-primary" onclick="sendMsg()"><i class="fas fa-paper-plane"></i> Envoyer</button>
+      </div>
+    </div>
+  `);
+}
+window.sendMsg = function(){
+  const to  = document.getElementById('msgTo').value.trim();
+  const msg = document.getElementById('msgBody').value.trim();
+  if(!to||!msg){ toast('Destinataire et message requis',true); return; }
+  const msgs=ls('messages');
+  msgs.push({id:Date.now(),from:currentUser.login,to,message:msg,date:new Date().toLocaleString('fr-FR'),lu:false});
+  ls('messages',msgs); toast('Message envoyé'); pageMessages();
+};
+
+// --- PARAMÈTRES ---
+function pageParametres() {
+  setContent(`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+      <div class="card">
+        <div class="card-title"><i class="fas fa-key"></i> Changer mon mot de passe</div>
+        <div>
+          <label>Ancien mot de passe</label>
+          <input type="password" id="oldPwd" placeholder="Ancien mot de passe">
+        </div>
+        <div style="margin-top:.75rem">
+          <label>Nouveau mot de passe</label>
+          <input type="password" id="newPwd" placeholder="Nouveau mot de passe">
+        </div>
+        <div style="margin-top:.75rem">
+          <label>Confirmer</label>
+          <input type="password" id="confPwd" placeholder="Confirmer le nouveau">
+        </div>
+        <button class="btn-primary" style="margin-top:.75rem" onclick="changePassword()"><i class="fas fa-save"></i> Modifier</button>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-circle-info"></i> Mon profil</div>
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+          <div class="avatar" style="width:56px;height:56px;font-size:1.2rem">${currentUser.nom.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()}</div>
+          <div>
+            <div style="font-weight:600;font-size:1.05rem">${currentUser.nom}</div>
+            <div style="color:var(--muted);font-size:.85rem">${currentUser.role==='prof'?currentUser.matiere:currentUser.role==='eleve'?currentUser.classe:'Administrateur'}</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:.4rem;font-size:.875rem">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Rôle</span><span class="badge badge-purple">${currentUser.role}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Login</span><code style="background:var(--surface);padding:.1rem .4rem;border-radius:4px">${currentUser.login}</code></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="fas fa-palette"></i> Apparence</div>
+      <div class="form-row">
+        <button class="btn-outline" onclick="document.body.classList.remove('light')">🌙 Thème sombre</button>
+        <button class="btn-outline" onclick="document.body.classList.add('light')">☀️ Thème clair</button>
+      </div>
+    </div>
+  `);
+}
+window.changePassword = function(){
+  const old=document.getElementById('oldPwd').value;
+  const nw =document.getElementById('newPwd').value;
+  const cf =document.getElementById('confPwd').value;
+  if(!old||!nw||!cf){ toast('Tous les champs requis',true); return; }
+  if(nw!==cf){ toast('Les mots de passe ne correspondent pas',true); return; }
+  if(nw.length<6){ toast('Mot de passe trop court (min 6 caractères)',true); return; }
+
+  if(currentUser.role==='admin'){
+    if(old!=='admin123'){ toast('Ancien mot de passe incorrect',true); return; }
+    toast('Mot de passe modifié (admin simulation)');
+  } else if(currentUser.role==='prof'){
+    const profs=ls('professeurs'), p=profs.find(x=>x.id===currentUser.id);
+    if(!p||p.password!==old){ toast('Ancien mot de passe incorrect',true); return; }
+    p.password=nw; ls('professeurs',profs); toast('Mot de passe modifié');
+  } else {
+    const eleves=ls('eleves'), e=eleves.find(x=>x.id===currentUser.id);
+    if(!e||e.password!==old){ toast('Ancien mot de passe incorrect',true); return; }
+    e.password=nw; ls('eleves',eleves); toast('Mot de passe modifié');
+  }
+};
+</script>
+</body>
+</html>
